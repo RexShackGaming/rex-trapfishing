@@ -107,24 +107,18 @@ end)
 -- emtpy trap
 -----------------------------------------------------------------
 RegisterNetEvent('rex-trapfishing:client:emptytrap', function(data)
-    RSGCore.Functions.TriggerCallback('rex-trapfishing:server:getalltrapdata', function(result)
-        local crayfish = result[1].crayfish
-        local lobster = result[1].lobster
-        local crab = result[1].crab
-        local bluecrab = result[1].bluecrab
-        -- do empty trap
-        isBusy = true
-        LocalPlayer.state:set("inv_busy", true, true) -- lock inventory
-        local anim1 = `WORLD_HUMAN_CROUCH_INSPECT`
-        FreezeEntityPosition(cache.ped, true)
-        TaskStartScenarioInPlace(cache.ped, anim1, 0, true)
-        Wait(10000)
-        ClearPedTasks(cache.ped)
-        FreezeEntityPosition(cache.ped, false)
-        TriggerServerEvent('rex-trapfishing:server:emptytrap', crayfish, lobster, crab, bluecrab, data.trapid)
-        LocalPlayer.state:set("inv_busy", false, true) -- unlock inventory
-        isBusy = false
-    end, data.trapid)
+    -- do empty trap
+    isBusy = true
+    LocalPlayer.state:set("inv_busy", true, true) -- lock inventory
+    local anim1 = `WORLD_HUMAN_CROUCH_INSPECT`
+    FreezeEntityPosition(cache.ped, true)
+    TaskStartScenarioInPlace(cache.ped, anim1, 0, true)
+    Wait(10000)
+    ClearPedTasks(cache.ped)
+    FreezeEntityPosition(cache.ped, false)
+    TriggerServerEvent('rex-trapfishing:server:emptytrap', data.trapid)
+    LocalPlayer.state:set("inv_busy", false, true) -- unlock inventory
+    isBusy = false
 end)
 
 ---------------------------------------------
@@ -246,37 +240,23 @@ end)
 ---------------------------------------------
 RegisterNetEvent('rex-trapfishing:client:repairtrap', function(data)
 
-    RSGCore.Functions.TriggerCallback('rex-trapfishing:server:getalltrapdata', function(result)
+     LocalPlayer.state:set("inv_busy", true, true) -- lock inventory
+     lib.progressBar({
+         duration = Config.RepairTime,
+         position = 'bottom',
+         useWhileDead = false,
+         canCancel = false,
+         disableControl = true,
+         disable = {
+             move = true,
+             mouse = true,
+         },
+         label = locale('cl_lang_16'),
+     })
+     TriggerServerEvent('rex-trapfishing:server:repairtrap', data.trapid)
+     LocalPlayer.state:set("inv_busy", false, true) -- unlock inventory
 
-        local repaircost = (100 - result[1].quality) * Config.RepairCost
-
-        RSGCore.Functions.TriggerCallback('rex-trapfishing:server:cashcallback', function(cash)
-
-            if cash > repaircost then
-                LocalPlayer.state:set("inv_busy", true, true) -- lock inventory
-                lib.progressBar({
-                    duration = Config.RepairTime,
-                    position = 'bottom',
-                    useWhileDead = false,
-                    canCancel = false,
-                    disableControl = true,
-                    disable = {
-                        move = true,
-                        mouse = true,
-                    },
-                    label = locale('cl_lang_16'),
-                })
-                TriggerServerEvent('rex-trapfishing:server:repairtrap', data.trapid, repaircost)
-                LocalPlayer.state:set("inv_busy", false, true) -- unlock inventory
-            else
-                lib.notify({ title = locale('cl_lang_17'), type = 'error', duration = 7000 })
-            end
-
-        end)
-
-    end, data.trapid)
-
-end)
+ end)
 
 ---------------------------------------------
 -- add bait
@@ -295,22 +275,21 @@ AddEventHandler('rex-trapfishing:client:addbait', function(data)
 
         local hasItem = RSGCore.Functions.HasItem('trapbait', 1)
 
-        if hasItem then
-            isBusy = true
-            LocalPlayer.state:set("inv_busy", true, true) -- lock inventory
-            local newbait = bait + 10
-            local anim1 = `WORLD_HUMAN_CROUCH_INSPECT`
-            FreezeEntityPosition(cache.ped, true)
-            TaskStartScenarioInPlace(cache.ped, anim1, 0, true)
-            Wait(10000)
-            ClearPedTasks(cache.ped)
-            FreezeEntityPosition(cache.ped, false)
-            TriggerServerEvent('rex-trapfishing:server:addbait', data.trapid, newbait)
-            LocalPlayer.state:set("inv_busy", false, true) -- unlock inventory
-            isBusy = false
-        else
-            lib.notify({ title = locale('cl_lang_19'), type = 'error', duration = 7000 })
-        end
+         if hasItem then
+             isBusy = true
+             LocalPlayer.state:set("inv_busy", true, true) -- lock inventory
+             local anim1 = `WORLD_HUMAN_CROUCH_INSPECT`
+             FreezeEntityPosition(cache.ped, true)
+             TaskStartScenarioInPlace(cache.ped, anim1, 0, true)
+             Wait(10000)
+             ClearPedTasks(cache.ped)
+             FreezeEntityPosition(cache.ped, false)
+             TriggerServerEvent('rex-trapfishing:server:addbait', data.trapid)
+             LocalPlayer.state:set("inv_busy", false, true) -- unlock inventory
+             isBusy = false
+         else
+             lib.notify({ title = locale('cl_lang_19'), type = 'error', duration = 7000 })
+         end
 
     end, data.trapid)
 
@@ -353,9 +332,7 @@ RegisterNetEvent('rex-trapfishing:client:pickuptrap', function(data)
         local fxcoords = vector3(propcoords.x, propcoords.y, propcoords.z)
         UseParticleFxAsset(fx_group)
         smoke = StartParticleFxNonLoopedAtCoord(fx_name, fxcoords, 0.0, 0.0, 0.0, fx_scale, false, false, false, true)
-
-        TriggerServerEvent('rex-trapfishing:server:emptytrap', crayfish, lobster, crab, bluecrab, data.trapid)
-        TriggerServerEvent('rex-trapfishing:server:destroyProp', data.trapid, 'fishtrap')
+        TriggerServerEvent('rex-trapfishing:server:destroyProp', data.trapid)
 
     end, data.trapid)
 
